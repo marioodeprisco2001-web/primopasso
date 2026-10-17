@@ -9,7 +9,7 @@ import { AREAS, CATEGORY_KEYS, MODE_KEYS, type Category, type Filters, type Job,
 export const PAGE_SIZE = 40;
 
 const COLUMNS =
-  "id,title,company_name,url,source,category,area,city,region,mode,pay_monthly,pay_annual,duration_months,experience_years,education,summary,requirements,posted_at";
+  "id,title,company_name,url,source,category,area,city,region,mode,pay_monthly,pay_annual,duration_months,experience_years,education,summary,requirements,posted_at,featured_until";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapRow(r: any): Job {
@@ -32,6 +32,7 @@ export function mapRow(r: any): Job {
     summary: r.summary,
     requirements: r.requirements ?? [],
     postedAt: r.posted_at,
+    featured: Boolean(r.featured_until && new Date(r.featured_until).getTime() > Date.now()),
   };
 }
 
@@ -81,9 +82,11 @@ export async function searchJobs(f: Filters, page = 1, since?: string, client?: 
   if (f.cats.length) list = list.in("category", f.cats);
   if (f.areas.length) list = list.in("area", f.areas);
   if (f.modes.length) list = list.in("mode", f.modes);
+  // Ordinamento predefinito: prima gli annunci in evidenza, poi i più recenti.
+  // Le evidenze scadute vengono azzerate ogni notte (vedi maintenance.ts).
   list = f.sort === "compenso"
     ? list.order("pay_sort", { ascending: false, nullsFirst: false }).order("posted_at", { ascending: false })
-    : list.order("posted_at", { ascending: false });
+    : list.order("featured_until", { ascending: false, nullsFirst: false }).order("posted_at", { ascending: false });
   list = list.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   const [res, facetRes] = await Promise.all([list, base(sb.from("jobs").select("category,area,mode")).limit(5000)]);
@@ -109,7 +112,7 @@ function searchDemo(f: Filters): SearchResult {
   });
   const jobs = base
     .filter((j) => (!f.cats.length || f.cats.includes(j.category)) && (!f.areas.length || (j.area && f.areas.includes(j.area))) && (!f.modes.length || (j.mode && f.modes.includes(j.mode))))
-    .sort((a, b) => (f.sort === "compenso" ? monthlyValue(b) - monthlyValue(a) : b.postedAt.localeCompare(a.postedAt)));
+    .sort((a, b) => (f.sort === "compenso" ? monthlyValue(b) - monthlyValue(a) : Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || b.postedAt.localeCompare(a.postedAt)));
   return { jobs, total: jobs.length, facets: facetsFrom(base, f), demo: true };
 }
 

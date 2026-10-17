@@ -5,11 +5,11 @@ import { payLabel } from "./format";
 import { toQuery } from "./filters";
 import { SITE_URL } from "./supabase/config";
 import { supabaseAdmin } from "./supabase/admin";
-import { CATEGORIES, EMPTY_FILTERS, type Filters, type Job } from "./types";
+import { CATEGORIES, EMPTY_FILTERS, type Filters, type Job, type Sponsor } from "./types";
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
-function emailHtml(label: string, jobs: Job[], searchUrl: string, unsubscribeUrl: string) {
+function emailHtml(label: string, jobs: Job[], searchUrl: string, unsubscribeUrl: string, sponsor: Sponsor | null) {
   const items = jobs.slice(0, 10).map((j) => {
     const pay = payLabel(j).value ?? "Compenso non dichiarato";
     return `<tr><td style="padding:12px 0;border-top:1px solid #d9e1de">
@@ -25,8 +25,18 @@ function emailHtml(label: string, jobs: Job[], searchUrl: string, unsubscribeUrl
     <tr><td style="font-size:15px;color:#13201c;padding-bottom:12px">${jobs.length} ${jobs.length === 1 ? "nuovo annuncio" : "nuovi annunci"} per <b>${esc(label)}</b></td></tr>
     ${items}
     <tr><td style="padding-top:16px"><a href="${searchUrl}" style="background:#2340d8;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:700">Vedi tutti gli annunci</a></td></tr>
+    ${sponsor ? sponsorHtml(sponsor) : ""}
     <tr><td style="padding-top:20px;font-size:12px;color:#586863">Ricevi questa email perché hai creato un avviso su Primopasso. <a href="${unsubscribeUrl}" style="color:#586863">Disiscriviti da questo avviso</a>.</td></tr>
   </table></td></tr></table></body></html>`;
+}
+
+/** Riquadro dello sponsor delle email: il link passa da /vai/sponsor/email per contare i click. */
+function sponsorHtml(sp: Sponsor) {
+  return `<tr><td style="padding-top:20px"><a href="${SITE_URL}/vai/sponsor/email" style="display:block;border:1px solid #d9e1de;border-radius:10px;padding:12px 14px;text-decoration:none;color:#13201c">
+      <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#586863">Sponsorizzato</div>
+      <div style="font-size:15px;font-weight:700;color:#13201c">${esc(sp.name)}</div>
+      ${sp.text ? `<div style="font-size:14px;color:#586863">${esc(sp.text)}</div>` : ""}
+    </a></td></tr>`;
 }
 
 /** Invia le email degli avvisi: ogni giorno i giornalieri, il lunedì anche i settimanali. */
@@ -41,6 +51,8 @@ export async function sendAlerts(): Promise<{ sent: number; skipped: number; err
 
   const { data: searches } = await db.from("saved_searches").select("id,user_id,label,filters,last_sent_at,created_at,unsubscribe_token").in("frequency", freqs);
   const out = { sent: 0, skipped: 0, errors: [] as string[] };
+  const { data: sp } = await db.from("sponsors").select("slot,active,name,text,url").eq("slot", "email").eq("active", true).maybeSingle();
+  const sponsor = sp && sp.name && sp.url ? (sp as Sponsor) : null;
 
   for (const s of searches ?? []) {
     try {
@@ -56,7 +68,7 @@ export async function sendAlerts(): Promise<{ sent: number; skipped: number; err
       const { error } = await resend.emails.send({
         from, to: email,
         subject: `${res.total} ${res.total === 1 ? "nuovo annuncio" : "nuovi annunci"}: ${s.label}`,
-        html: emailHtml(s.label, res.jobs, SITE_URL + "/" + toQuery(f), `${SITE_URL}/avvisi/disiscriviti?t=${s.unsubscribe_token}`),
+        html: emailHtml(s.label, res.jobs, SITE_URL + "/" + toQuery(f), `${SITE_URL}/avvisi/disiscriviti?t=${s.unsubscribe_token}`, sponsor),
       });
       if (error) throw new Error(error.message);
       await db.from("saved_searches").update({ last_sent_at: new Date().toISOString() }).eq("id", s.id);

@@ -59,13 +59,30 @@ Nell'area admin, sezione *Aziende seguite*: nome, sistema e indirizzo della pagi
 
 Basta incollare l'indirizzo: il sito ne estrae l'ultima parte. I connettori Ashby e Workable vanno verificati con un'azienda reale.
 
+## Strumenti per guadagnare
+
+Dopo aver aggiornato il codice, esegui **una volta** in Supabase → SQL Editor il file `supabase/aggiornamento-01-guadagni.sql` (se parti da zero basta `schema.sql`, che lo contiene già). Finché non lo esegui, l'area admin mostra un avviso.
+
+| Cosa | Dove si gestisce | Come funziona |
+| --- | --- | --- |
+| Statistiche di visita | Vercel → progetto → **Analytics** → *Enable* | Senza cookie, non serve il consenso |
+| Click su «Candidati» | Admin → *Click negli ultimi 30 giorni* | Il bottone passa da `/vai/<id>`, conta il click e aggiunge `utm_source=primopasso` al link dell'azienda |
+| Annunci inviati dalle aziende | Pagina `/aziende` → Admin → *Richieste dalle aziende* | Li approvi tu; restano online 60 giorni |
+| Annunci in evidenza | Admin, oppure i pulsanti admin nella pagina di ogni annuncio | In cima ai risultati con l'etichetta «In evidenza»; l'evidenza scade da sola |
+| Sponsor sul sito e nelle email | Admin → *Spazi sponsor* | Riquadro «Sponsorizzato» dopo il quinto annuncio, nella pagina annuncio e nelle email degli avvisi; i click vengono contati |
+| Prezzo dell'evidenza | Variabile `NEXT_PUBLIC_PRICE_FEATURED` su Vercel | Es. `49 € + IVA`; se vuota la pagina aziende mostra «Su richiesta» |
+
+I pagamenti per ora sono manuali: l'azienda chiede l'evidenza dal modulo, tu ricevi un'email (se Resend è configurato), mandi i dati per il pagamento e pubblichi dall'admin.
+
+Gli annunci pubblicati sono anche nella sitemap e hanno i dati strutturati `JobPosting`, che permettono a Google di mostrarli nella sua ricerca lavoro.
+
 ## Job notturni
 
 Definiti in `vercel.json` (orari UTC):
 
 | Job | Orario (Italia, ora legale) | Cosa fa |
 | --- | --- | --- |
-| `/api/cron/ingest` | 05:00 | Legge le pagine carriere, segna gli annunci scaduti, classifica i nuovi |
+| `/api/cron/ingest` | 05:00 | Toglie le evidenze scadute, legge le pagine carriere, segna gli annunci scaduti, classifica i nuovi |
 | `/api/cron/alerts` | 08:00 | Invia gli avvisi giornalieri; il lunedì anche i settimanali |
 
 Se Vercel rifiuta `maxDuration = 300` per il piano gratuito, abbassalo a `60` nelle due route e riduci `maxCompanies` e `maxClassify` in `src/lib/ingest/run.ts`.

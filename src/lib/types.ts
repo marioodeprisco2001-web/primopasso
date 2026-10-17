@@ -62,7 +62,11 @@ export type Job = {
   summary: string | null;
   requirements: string[];
   postedAt: string; // ISO
+  featured?: boolean; // in evidenza (a pagamento)
 };
+
+export type SponsorSlot = "sito" | "email";
+export type Sponsor = { slot: SponsorSlot; active: boolean; name: string; text: string; url: string };
 
 export type Filters = {
   q: string;

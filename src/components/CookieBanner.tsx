@@ -14,7 +14,7 @@ export function CookieBanner() {
   if (!show) return null;
   return (
     <div className="cookie" role="region" aria-label="Cookie">
-      <div>Usiamo cookie tecnici per far funzionare il sito e, solo se accetti, cookie per statistiche e pubblicità. <a href="/cookie" style={{ color: "inherit" }}>Dettagli</a></div>
+      <div>Usiamo solo cookie tecnici per far funzionare il sito; le statistiche non usano cookie. Eventuali cookie di terze parti verrebbero caricati solo se accetti. <a href="/cookie" style={{ color: "inherit" }}>Dettagli</a></div>
       <div className="row">
         <button className="yes" onClick={() => choose("all")}>Accetta</button>
         <button onClick={() => choose("tech")}>Solo tecnici</button>

@@ -1,10 +1,15 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import { toQuery } from "@/lib/filters";
 import { PAGE_SIZE } from "@/lib/jobs";
-import type { Filters, Job } from "@/lib/types";
+import type { Filters, Job, Sponsor } from "@/lib/types";
 import { JobCard } from "./JobCard";
+import { SponsorCard } from "./SponsorCard";
 
-export function Results({ jobs, favs, total, page, filters }: { jobs: Job[]; favs: Set<string>; total: number; page: number; filters: Filters }) {
+/** Lo spazio sponsor compare dopo il quinto annuncio (o in fondo, se sono meno). */
+const SPONSOR_AFTER = 5;
+
+export function Results({ jobs, favs, total, page, filters, sponsor }: { jobs: Job[]; favs: Set<string>; total: number; page: number; filters: Filters; sponsor?: Sponsor | null }) {
   if (!jobs.length)
     return (
       <ul className="results">
@@ -22,7 +27,14 @@ export function Results({ jobs, favs, total, page, filters }: { jobs: Job[]; fav
   };
   return (
     <>
-      <ul className="results">{jobs.map((j) => <JobCard key={j.id} job={j} fav={favs.has(j.id)} />)}</ul>
+      <ul className="results">
+        {jobs.map((j, i) => (
+          <Fragment key={j.id}>
+            <JobCard job={j} fav={favs.has(j.id)} />
+            {sponsor && i === Math.min(SPONSOR_AFTER, jobs.length) - 1 && <SponsorCard sponsor={sponsor} />}
+          </Fragment>
+        ))}
+      </ul>
       {pages > 1 && (
         <nav className="pager" aria-label="Pagine">
           {page > 1 && <Link className="btn btn-ghost" href={href(page - 1)}>Precedenti</Link>}

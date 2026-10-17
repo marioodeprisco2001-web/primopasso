@@ -4,6 +4,7 @@ import { DemoBanner, Results } from "@/components/Results";
 import { SearchShell } from "@/components/SearchShell";
 import { favoriteIds, searchJobs } from "@/lib/jobs";
 import { SEO_PAGES, findSeoPage } from "@/lib/seo";
+import { getSponsor } from "@/lib/sponsors";
 import { EMPTY_FILTERS } from "@/lib/types";
 
 export const revalidate = 3600;
@@ -20,12 +21,12 @@ export default async function SeoPage({ params }: { params: Promise<{ slug: stri
   const page = findSeoPage((await params).slug);
   if (!page) notFound();
   const filters = { ...EMPTY_FILTERS, ...page.filters };
-  const [res, favs] = await Promise.all([searchJobs(filters), favoriteIds()]);
+  const [res, favs, sponsor] = await Promise.all([searchJobs(filters), favoriteIds(), getSponsor("sito")]);
   return (
     <>
       {res.demo && <DemoBanner />}
       <SearchShell filters={filters} facets={res.facets} total={res.total} heading={<h1>{page.title}</h1>} intro={page.intro}>
-        <Results jobs={res.jobs} favs={favs} total={res.total} page={1} filters={filters} />
+        <Results jobs={res.jobs} favs={favs} total={res.total} page={1} filters={filters} sponsor={sponsor} />
       </SearchShell>
     </>
   );

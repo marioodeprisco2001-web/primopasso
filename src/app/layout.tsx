@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
 import { CookieBanner } from "@/components/CookieBanner";
 import { Logo } from "@/components/icons";
 import { MainNav, TabBar } from "@/components/Nav";
@@ -65,7 +66,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <li><Link className="linkbtn" href="/privacy">Privacy policy</Link></li>
                 <li><Link className="linkbtn" href="/cookie">Cookie policy</Link></li>
                 <li><Link className="linkbtn" href="/termini">Termini d&apos;uso</Link></li>
-                <li><Link className="linkbtn" href="/aziende">Per le aziende</Link></li>
+                <li><Link className="linkbtn" href="/aziende">Aziende: pubblica un annuncio</Link></li>
               </ul>
             </div>
           </div>
@@ -73,6 +74,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
         <TabBar counts={counts} admin={s.isAdmin} />
         <CookieBanner />
+        {/* Statistiche di visita senza cookie (da attivare nella sezione Analytics di Vercel) */}
+        <Analytics />
       </body>
     </html>
   );
