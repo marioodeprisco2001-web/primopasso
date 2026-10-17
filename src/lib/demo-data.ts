@@ -29,4 +29,5 @@ export const DEMO_JOBS: Job[] = ROWS.map((r, i) => ({
   payMonthly: r[7], payAnnual: r[8], durationMonths: r[9], experienceYears: r[10], education: r[11],
   postedAt: daysAgo(r[12]), summary: r[13], requirements: r[14],
   url: "https://example.com", source: "Esempio",
+  featured: i === 4, // un annuncio in evidenza per vedere come appare
 }));

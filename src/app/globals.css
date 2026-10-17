@@ -285,3 +285,41 @@ footer p { margin: 0; color: var(--muted); font-size: 13.5px; max-width: 46ch; }
   .logo .tag { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Strumenti per guadagnare: evidenza, sponsor, pagina aziende */
+.card.featured { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: inset 4px 0 0 var(--accent); }
+.featured-tag { display: inline-flex; align-items: center; font-size: 12px; font-weight: 700; color: var(--on-mark); background: var(--mark); border-radius: 6px; padding: 2px 8px; }
+.sponsor { list-style: none; background: var(--sunk); border: 1px dashed var(--line); border-radius: 14px; }
+.sponsor a { display: grid; gap: 4px; padding: 14px 18px; color: inherit; text-decoration: none; }
+.sponsor a:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+.sponsor strong { font-family: var(--f-display); font-size: 17px; font-weight: 600; }
+.sponsor-label { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sponsor-text { color: var(--muted); font-size: 14px; }
+.sponsor-cta { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13.5px; color: var(--accent); }
+.sponsor.compact a { padding: 12px 14px; }
+.admin-box { display: grid; gap: 8px; padding: 14px; border-style: dashed; }
+.warn-panel { border-color: var(--warn); color: var(--ink); }
+.warn-panel code, .prose code { font-family: var(--f-mono); font-size: 13px; background: var(--sunk); border-radius: 4px; padding: 1px 5px; }
+.prose h2 { font-size: 20px; margin-top: 8px; }
+.plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.plan { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 8px; align-content: start; }
+.plan-hi { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.plan .price { font-family: var(--f-display); font-size: 26px; font-weight: 800; }
+.plan ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--muted); font-size: 14.5px; }
+.submit-form { max-width: 720px; }
+.submit-form fieldset { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 16px 18px 18px; margin: 0; display: grid; gap: 14px; min-width: 0; }
+.submit-form legend { font-family: var(--f-display); font-weight: 600; font-size: 17px; padding: 0 6px; }
+.form select, .form textarea, .sponsor-form input[type="text"] { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 11px 12px; width: 100%; min-width: 0; }
+.form textarea { resize: vertical; font: inherit; color: inherit; }
+.form label.lbl input { width: 100%; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.featured-choice { align-items: flex-start; }
+.featured-choice input { margin-top: 3px; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.sponsor-form { max-width: none; }
+.sponsor-form + .sponsor-form { border-top: 1px solid var(--line); padding-top: 20px; }
+.sponsor-form h3 { font-family: var(--f-body); font-size: 16.5px; font-weight: 700; }
+@media (max-width: 760px) {
+  .plans, .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); }
+}

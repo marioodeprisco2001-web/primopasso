@@ -4,9 +4,14 @@ import { notFound } from "next/navigation";
 import { FavButton } from "@/components/FavButton";
 import { CheckIcon, ExtIcon, InfoIcon, WarnIcon } from "@/components/icons";
 import { CategoryTag } from "@/components/JobCard";
+import { FeaturedTag, SponsorCard } from "@/components/SponsorCard";
+import { getSession } from "@/lib/account";
 import { ago, experienceLabel, payLabel, payNote } from "@/lib/format";
 import { favoriteIds, getJob } from "@/lib/jobs";
-import { MODES } from "@/lib/types";
+import { getSponsor } from "@/lib/sponsors";
+import { SITE_URL } from "@/lib/supabase/config";
+import { MODES, type Job } from "@/lib/types";
+import { FeatureControl } from "./FeatureControl";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const job = await getJob((await params).id);
@@ -16,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [job, favs] = await Promise.all([getJob(id), favoriteIds()]);
+  const [job, favs, sponsor, session] = await Promise.all([getJob(id), favoriteIds(), getSponsor("sito"), getSession()]);
   if (!job) notFound();
   const pay = payLabel(job);
   const note = payNote(job);
@@ -25,10 +30,11 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
 
   return (
     <div className="wrap detail">
+      <JobPostingData job={job} />
       <article className="detail-main">
         <Link href="/" className="back">← Torna agli annunci</Link>
         <div style={{ display: "grid", gap: 10 }}>
-          <div><CategoryTag job={job} /></div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><CategoryTag job={job} />{job.featured && <FeaturedTag />}</div>
           <h1>{job.title}</h1>
           <p className="co">{job.company} · {job.city ?? "Italia"}{job.mode ? ` · ${MODES[job.mode]}` : ""}</p>
         </div>
@@ -65,12 +71,46 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             <dt>Pubblicato</dt><dd>{ago(job.postedAt)}</dd>
           </dl>
         </div>
-        <a className="btn btn-primary" href={job.url} target="_blank" rel="noopener nofollow">Candidati sul sito dell&apos;azienda <ExtIcon /></a>
+        <a className="btn btn-primary" href={`/vai/${job.id}`} target="_blank" rel="noopener nofollow">Candidati sul sito dell&apos;azienda <ExtIcon /></a>
         <FavButton jobId={job.id} initial={favs.has(job.id)} variant="button" />
+        {session.isAdmin && <FeatureControl jobId={job.id} featured={Boolean(job.featured)} />}
+        {sponsor && <SponsorCard sponsor={sponsor} compact />}
         {support && (
           <p className="fine">Un dato è sbagliato? Scrivi a <span style={{ userSelect: "all" }}>{support}</span> indicando il codice {job.id.slice(0, 8)}.</p>
         )}
       </aside>
     </div>
   );
+}
+
+const EMPLOYMENT: Record<Job["category"], string> = {
+  curricolare: "INTERN", extra: "INTERN", internship: "INTERN", apprendistato: "FULL_TIME", junior: "FULL_TIME",
+};
+const escHtml = (t: string) => t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+
+/** Dati strutturati JobPosting: permettono a Google di mostrare l'annuncio nella ricerca lavoro. */
+function JobPostingData({ job }: { job: Job }) {
+  if (!job.summary || job.id.startsWith("demo-")) return null;
+  const description = `<p>${escHtml(job.summary)}</p>` + (job.requirements.length ? `<ul>${job.requirements.map((r) => `<li>${escHtml(r)}</li>`).join("")}</ul>` : "");
+  const salary = job.payAnnual
+    ? { "@type": "MonetaryAmount", currency: "EUR", value: { "@type": "QuantitativeValue", value: job.payAnnual, unitText: "YEAR" } }
+    : job.payMonthly
+      ? { "@type": "MonetaryAmount", currency: "EUR", value: { "@type": "QuantitativeValue", value: job.payMonthly, unitText: "MONTH" } }
+      : undefined;
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    title: job.title,
+    description,
+    datePosted: job.postedAt,
+    employmentType: EMPLOYMENT[job.category],
+    hiringOrganization: { "@type": "Organization", name: job.company },
+    url: `${SITE_URL}/annuncio/${job.id}`,
+    directApply: false,
+    ...(job.mode === "remoto"
+      ? { jobLocationType: "TELECOMMUTE", applicantLocationRequirements: { "@type": "Country", name: "IT" } }
+      : { jobLocation: { "@type": "Place", address: { "@type": "PostalAddress", addressLocality: job.city ?? undefined, addressRegion: job.region ?? undefined, addressCountry: "IT" } } }),
+    ...(salary ? { baseSalary: salary } : {}),
+  };
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }} />;
 }
